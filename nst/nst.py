@@ -144,14 +144,13 @@ class NST():
         self.current_loss = None
         
         
-    def Run(self,max_steps=-1,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50,sheduler_step = 200):
+    def Run(self,max_steps=-1,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50):
         if(max_steps>0): self.max_steps = max_steps
         elif(self.max_steps<0): self.max_steps = 500
         if (H>1 or H<0): raise InvalidHCoefficientException("H cannot be lesser than 0 and bigger than 1")
         
         self.style_weight = style_weight
         self.content_weight = content_weight
-        self.sheduler_step = sheduler_step
         self.output_delay = output_delay
         self.input_image = self.current_task.GetContentImage()
         self.iterations = 0
