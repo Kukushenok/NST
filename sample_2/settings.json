@@ -1,1 +1,0 @@
-{"image_size":512,"content_image":"input.jpg","style_data":[{"style_image":"output_1.jpg","weight":0.3},{"style_image":"output_2.jpg","weight":0.7}],"epoch_count":1000}

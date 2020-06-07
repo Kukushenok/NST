@@ -13,7 +13,7 @@ class InvalidHCoefficientException(NSTException):pass
 
 def GetAndAssert(dictionary,key):
     value = dictionary.get(key)
-    assert (value is not None,"Key {0} is nit exist".format(key))
+    assert (value is not None,"Key {0} is not exist".format(key))
     return value
 def GetAndAssertPath(dictionary,key,additionalPath = ""):
     value = additionalPath+"/"+GetAndAssert(dictionary,key)
@@ -21,9 +21,9 @@ def GetAndAssertPath(dictionary,key,additionalPath = ""):
     return value
 def GetAndAssertInt(dictionary, key):
     value = GetAndAssert(dictionary,key)
-    assert (int(str(value))==value,"Key {0} is not an int".format(key))
+    assert (isinstance(value,int),"Key {0} is not an int".format(key))
     return value
 def GetAndAssertFloat(dictionary, key):
     value = GetAndAssert(dictionary,key)
-    assert (float(str(value))-value<=0.0005,"Key {0} is not a float".format(key))
+    assert (isinstance(value,float),"Key {0} is not a float".format(key))
     return value

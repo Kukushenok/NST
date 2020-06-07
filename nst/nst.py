@@ -10,6 +10,7 @@ import os
 from nst.exceptions import NoSuchLayerException,InvalidHCoefficientException
 from nst.plotter import Plotter
 from nst.pretrained_data import GetPretrainedData
+from torch.optim.lr_scheduler import StepLR
 import copy
 
 def gram_matrix(input):
@@ -78,9 +79,10 @@ class NST():
 
         self.iterations += 1
         if(self.iterations%self.output_delay==0):
-            print('Style Loss : {:4f} Content Loss: {:4f}'.format(
-                style_score.item(), content_score.item()))
-
+            print("Style Score: {0}; Content Score: {1}; Learning Rate: {2}".format(
+                style_score.item(), content_score.item(),self.sheduler.get_lr()[0]))
+        self.sheduler.step()
+        
         self.current_loss = style_score + content_score
         
         if(self.current_loss<self.min_loss or self.image_buffer is None):
@@ -89,7 +91,7 @@ class NST():
             
         return style_score + content_score
             
-    def __init__(self,task,pretrained_type = "vgg19"):
+    def __init__(self,task,pretrained_type = "vgg19", sheduler_gamma = 0.5):
         self.current_task = task
         task.binded_NST = self
         self.device = task.device
@@ -118,7 +120,7 @@ class NST():
                 raise NoSuchLayerException('Unrecognized layer: {}'.format(layer.__class__.__name__))
 
             self.model.add_module(name, layer)
-
+            
             if name in data["content_layers"]:
                 content_loss = NSTContentLoss(self.current_task)
                 self.model.add_module("content_loss_{}".format(i), content_loss)
@@ -134,21 +136,22 @@ class NST():
                 break
 
         self.model = self.model[:(i + 1)]
-        self.optimizer = optim.LBFGS([self.current_task.GetContentImage().requires_grad_()]) 
+        self.optimizer = optim.LBFGS([self.current_task.GetContentImage().requires_grad_()])
+        self.sheduler = StepLR(self.optimizer, step_size=200, gamma=sheduler_gamma)
         self.image_buffer = None
         self.min_loss = -1
         self.previous_loss = None
         self.current_loss = None
         
         
-    def Run(self,max_steps=-1,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50):
+    def Run(self,max_steps=-1,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50,sheduler_step = 200):
         if(max_steps>0): self.max_steps = max_steps
         elif(self.max_steps<0): self.max_steps = 500
         if (H>1 or H<0): raise InvalidHCoefficientException("H cannot be lesser than 0 and bigger than 1")
         
         self.style_weight = style_weight
         self.content_weight = content_weight
-        
+        self.sheduler_step = sheduler_step
         self.output_delay = output_delay
         self.input_image = self.current_task.GetContentImage()
         self.iterations = 0

@@ -20,8 +20,10 @@ class DataLoader():
         isValid = ""
         
         try:
-            self.image_size = GetAndAssertInt(self.settings, "image_size")
-            
+            self.image_size =self.settings.get("image_size",None)
+            if not isinstance(self.image_size,list): self.image_size = GetAndAssertInt(self.settings, "image_size")
+            elif(len(self.image_size)!=2): assert (False, "No-square image size can be set only by [X,Y]")
+            else: self.image_size[0],self.image_size[1]=self.image_size[1],self.image_size[0]
             self.image_loader = transforms.Compose([
                 transforms.Resize(self.image_size),  
                 transforms.CenterCrop(self.image_size),
@@ -60,6 +62,8 @@ class DataLoader():
                 if(self.style_data[i]["style_image"].shape!=shape):
                     raise InvalidDataException("Some pictures have different channels")
                     
+    def GetNumberOfStyles(self):
+        return len(list(filter(lambda x: x["weight"]!=0,self.style_data)))
     
     def __init__(self, solution_name, device = "cuda"):
         

@@ -31,6 +31,5 @@ class Plotter():
         plt.pause(0.001)
         
     def SaveImage(self,tensor,path = "output.png"):
-        print(tensor.shape)
         image = np.transpose(tensor.cpu().detach().numpy()[0], (1,2,0))
         plt.imsave(path,image)
