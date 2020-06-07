@@ -1,1 +1,1 @@
-{"image_size":128,"content_image":"input.jpg","style_data":[{"style_image":"output_1.jpg","weight":0.2},{"style_image":"output_2.jpg","weight":0.8}]}
+{"image_size":256,"content_image":"input.jpg","style_data":[{"style_image":"output_1.jpg","weight":0.2},{"style_image":"output_2.jpg","weight":0.8}]}

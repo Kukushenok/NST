@@ -71,6 +71,8 @@ class DataLoader():
             self.settings = json.loads(file.read())
             
         self.__ApplySettings()
+        self.binded_NST = None
+        
     def PlotData(self):
         plotter = Plotter()
         images = [self.content_image]

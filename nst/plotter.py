@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import torchvision.transforms as transforms
 class Plotter():
     def __init__(self):
         self.toPIL = transforms.ToPILImage()
         plt.ion()
+        
     def ShowOneImage(self, tensor, title=None):
         image = tensor.cpu().clone()
         plt.figure()
@@ -12,7 +14,9 @@ class Plotter():
         plt.imshow(image)
         if title is not None:
             plt.title(title)
+        plt.axis('off')
         plt.pause(0.001)
+        
     def ShowMultipleImages(self, tensors,titles = []):
         plt.figure()
         for i in range(len(tensors)):
@@ -26,3 +30,7 @@ class Plotter():
             plt.axis('off')
         plt.pause(0.001)
         
+    def SaveImage(self,tensor,path = "output.png"):
+        print(tensor.shape)
+        image = np.transpose(tensor.cpu().detach().numpy()[0], (1,2,0))
+        plt.imsave(path,image)
