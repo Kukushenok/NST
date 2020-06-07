@@ -7,8 +7,8 @@ import torch
 import torchvision.transforms as transforms
 #import torchvision.models as models
 import os
-import exceptions
-
+from nst.exceptions import InvalidSettingsException,NoSolutionException,NoSettingsException,GetAndAssertPath,GetAndAssertInt, GetAndAssertFloat
+from nst.plotter import Plotter
 class DataLoader():
     
     def __OpenImage(self,image_path):
@@ -17,51 +17,74 @@ class DataLoader():
         return image.to(self.device, torch.float)
     
     def __ApplySettings(self):
-        isValid = True
+        isValid = ""
         
         try:
-            self.image_size = exceptions.GetAndAssertInt(self.settings, "image_size")
+            self.image_size = GetAndAssertInt(self.settings, "image_size")
             
             self.image_loader = transforms.Compose([
                 transforms.Resize(self.image_size),  
                 transforms.CenterCrop(self.image_size),
                 transforms.ToTensor()])
             
-            self.content_image = exceptions.GetAndAssertPath(self.settings,"content_image")
+            self.content_image = GetAndAssertPath(self.settings,"content_image",self.solution_name)
             self.content_image = self.__OpenImage(self.content_image)
             
             self.style_data = []
             for data in self.settings.get("style_data"):
-                style_image = exceptions.GetAndAssertPath(data,"style_image")
+                style_image = GetAndAssertPath(data,"style_image",self.solution_name)
 
                 style_image = self.__OpenImage(style_image)
                 
-                weight = exceptions.GetAndAssertInt(data,"weight")
+                weight = GetAndAssertFloat(data,"weight")
                 
                 style = {"style_image":style_image,"weight":weight}
                 
                 self.style_data.append(style)
             
-        except Exception: isValid = False
+        except Exception as e: isValid = e.args[0]
         
+        if isValid: raise InvalidSettingsException("Task are not in correct format. Read README.md for documentation. Error: {0}".format(isValid))
         
-        if not isValid: raise exceptions.InvalidSettingsException("Solution are not in correct format. Read README.md for documentation")
+        self.__MapStyleData()
+        
+    def __MapStyleData(self):
+        sumOfWeights = sum(list(map(lambda x: x["weight"],self.style_data)))
+        if sumOfWeights>1:
+            print("WARNING: Sum of weights are not equals 1. They were converted to do that.")
+            for i in range(len(self.style_data)):
+                self.style_data[i]["weight"]/=sumOfWeights
     
     def __init__(self, solution_name, device = "cuda"):
         
         self.device = device
         
         if not os.path.exists(solution_name):
-            raise exceptions.NoSolutionException("Cannot find {0}".format(solution_name))
-            
-        self.settings_path = solution_name+"/settings.json"
+            raise NoSolutionException("Cannot find task {0}".format(solution_name))
+        self.solution_name = solution_name
+        self.settings_path = self.solution_name+"/settings.json"
         
         if not os.path.exists(self.settings_path):
-            raise exceptions.NoSettingsException("Cannot find settings in {0}".format(solution_name))
+            raise NoSettingsException("Cannot find settings.json in task {0}".format(solution_name))
         
         with open(self.settings_path,"r") as file:
             self.settings = json.loads(file.read())
             
         self.__ApplySettings()
+    def PlotData(self):
+        plotter = Plotter()
+        images = [self.content_image]
+        labels = ["Content"]
+        for data in self.style_data: 
+            images.append(data["style_image"])
+            labels.append("Style (weight = {0})".format(data["weight"]))
+    
+        plotter.ShowMultipleImages(images,labels)
+    
+    def GetStyleData(self):
+        return self.style_data
+    
+    def GetContentImage(self):
+        return self.content_image
         
         
