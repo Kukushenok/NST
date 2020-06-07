@@ -96,7 +96,7 @@ class NST():
         data = GetPretrainedData(pretrained_type,self.device)
         self.normalization = NSTNormalization(data["mean"],data["std"]).to(self.device)
         cnn = copy.deepcopy(data["model"])
-
+        self.max_steps = task.epoch_count
         self.content_losses = []
         self.style_losses = []
         self.model = nn.Sequential(self.normalization)
@@ -141,8 +141,9 @@ class NST():
         self.current_loss = None
         
         
-    def Run(self,max_steps=500,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50):
-        
+    def Run(self,max_steps=-1,style_weight = 1e+5,content_weight = 1, H = 0.7, non_stop = False, output_delay = 50):
+        if(max_steps>0): self.max_steps = max_steps
+        elif(self.max_steps<0): self.max_steps = 500
         if (H>1 or H<0): raise InvalidHCoefficientException("H cannot be lesser than 0 and bigger than 1")
         
         self.style_weight = style_weight
@@ -152,7 +153,7 @@ class NST():
         self.input_image = self.current_task.GetContentImage()
         self.iterations = 0
         previousExpBuffer = None
-        while self.iterations <= max_steps:
+        while self.iterations <= self.max_steps:
             self.optimizer.step(self.OptimizeFN)
             if previousExpBuffer is None:
                 previousExpBuffer = self.current_loss
@@ -160,11 +161,9 @@ class NST():
                 wasBuffer = previousExpBuffer
                 previousExpBuffer = previousExpBuffer*H+(1-H)*self.current_loss
                 if(wasBuffer<previousExpBuffer and not non_stop):
-                    print("WARNING: The model might be overtrained. Do you want to proceed the training? (Y if yes)")
-                    result = input()
-                    if result.upper()!="Y":
-                        self.input_image = self.image_buffer
-                        break
+                    print("WARNING: The model might be overtrained (slight loss function increased). Training cycle is stopped, make non_stop = True if you want to ignore that")
+                    self.input_image = self.image_buffer
+                    break
         self.input_image.data.clamp_(0, 1)
         return self.input_image
     

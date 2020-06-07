@@ -4,6 +4,7 @@ class DataLoaderException(Exception):pass
 class NoSolutionException(DataLoaderException):pass
 class NoSettingsException(DataLoaderException):pass
 class InvalidSettingsException(DataLoaderException):pass
+class InvalidDataException(DataLoaderException):pass
 
 class NSTException(Exception):pass
 

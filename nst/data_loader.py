@@ -7,7 +7,7 @@ import torch
 import torchvision.transforms as transforms
 #import torchvision.models as models
 import os
-from nst.exceptions import InvalidSettingsException,NoSolutionException,NoSettingsException,GetAndAssertPath,GetAndAssertInt, GetAndAssertFloat
+from nst.exceptions import InvalidSettingsException,NoSolutionException,NoSettingsException,InvalidDataException,GetAndAssertPath,GetAndAssertInt, GetAndAssertFloat
 from nst.plotter import Plotter
 class DataLoader():
     
@@ -29,7 +29,7 @@ class DataLoader():
             
             self.content_image = GetAndAssertPath(self.settings,"content_image",self.solution_name)
             self.content_image = self.__OpenImage(self.content_image)
-            
+            self.epoch_count = self.settings.get("max_epochs",-1)
             self.style_data = []
             for data in self.settings.get("style_data"):
                 style_image = GetAndAssertPath(data,"style_image",self.solution_name)
@@ -37,6 +37,8 @@ class DataLoader():
                 style_image = self.__OpenImage(style_image)
                 
                 weight = GetAndAssertFloat(data,"weight")
+                
+                assert (weight>=0,"Weights can't be lesser than 0")
                 
                 style = {"style_image":style_image,"weight":weight}
                 
@@ -46,14 +48,18 @@ class DataLoader():
         
         if isValid: raise InvalidSettingsException("Task are not in correct format. Read README.md for documentation. Error: {0}".format(isValid))
         
-        self.__MapStyleData()
+        self.__CheckStyleData()
         
-    def __MapStyleData(self):
+    def __CheckStyleData(self):
         sumOfWeights = sum(list(map(lambda x: x["weight"],self.style_data)))
+        shape = self.content_image.shape
         if sumOfWeights>1:
             print("WARNING: Sum of weights are not equals 1. They were converted to do that.")
             for i in range(len(self.style_data)):
                 self.style_data[i]["weight"]/=sumOfWeights
+                if(self.style_data[i]["style_image"].shape!=shape):
+                    raise InvalidDataException("Some pictures have different channels")
+                    
     
     def __init__(self, solution_name, device = "cuda"):
         
