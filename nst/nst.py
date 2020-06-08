@@ -91,7 +91,7 @@ class NST():
             
         return style_score + content_score
             
-    def __init__(self,task,pretrained_type = "vgg19", sheduler_gamma = 0.5):
+    def __init__(self,task,pretrained_type = "vgg19", sheduler_gamma = 0.5,sheduler_step = 200):
         self.current_task = task
         task.binded_NST = self
         self.device = task.device
@@ -137,7 +137,7 @@ class NST():
 
         self.model = self.model[:(i + 1)]
         self.optimizer = optim.LBFGS([self.current_task.GetContentImage().requires_grad_()])
-        self.sheduler = StepLR(self.optimizer, step_size=200, gamma=sheduler_gamma)
+        self.sheduler = StepLR(self.optimizer, step_size=sheduler_step, gamma=sheduler_gamma)
         self.image_buffer = None
         self.min_loss = -1
         self.previous_loss = None
